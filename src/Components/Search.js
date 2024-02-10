@@ -1,8 +1,21 @@
 import React from "react";
 
 class Search extends React.Component {
-    render() {
 
+    state = {
+        username: ""
+    }
+
+    handleUserNameChange = e =>{
+        const value = e.target.value
+
+        this.setState({
+            username: value
+        })
+    }
+
+    render() {
+        const {username} = this.state;
         return (
             <div className="bg-dark">
                 <div className="container py-5">
@@ -12,6 +25,8 @@ class Search extends React.Component {
                                 <div className="col-9">
                                     <input
                                         className="form-control"
+                                        value={username}
+                                        onChange={this.handleUserNameChange}
                                         type="text"
                                         name="username"
                                         placeholder="Enter username"
