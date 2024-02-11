@@ -1,5 +1,6 @@
 import React from 'react';
 import Search from './Components/Search';
+import UserCard from './Components/UserCard';
 
 class App extends React.Component {
 
@@ -37,12 +38,13 @@ class App extends React.Component {
   }
 
   render(){
-    const {error, loading} = this.state;
+    const {error, loading, user} = this.state;
     return (
       <div>
         <Search fetchData = {this.fetchUserData} />
         {(loading && (<p>Loading....</p>))}
         {error && <p className='text-danger'> {error} </p>}
+        {!loading && !error && user && <UserCard user={user} />}
       </div>
 
      );
