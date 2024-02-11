@@ -5,28 +5,46 @@ class App extends React.Component {
 
   state = {
     user: null,
+    error: null,
+    loading: false
   }
 
   fetchUserData = async username =>{
-    try{
-      const res = await fetch(`https://api.github.com/users/${username}`);
-      if(res.ok){
-        const data = await res.json();
-
-        return this.setState({
-          user: data,
+    this.setState({ loading: true}, async ()=>{
+      try{
+        const res = await fetch(`https://api.github.com/users/${username}`);
+        if(res.ok){
+          const data = await res.json();
+  
+          return this.setState({
+            user: data,
+            loading: false
+          })
+        }
+        const error = (await res.json()).message;
+  
+           this.setState({
+            error,
+            loading: false,
+           });
+      }catch(err){
+        this.setState({
+          error: "there was some error",
+          loading: false,
         })
-
       }
-    }catch(err){
-      console.log(err);
-    }
-
+    })
   }
 
   render(){
+    const {error, loading} = this.state;
     return (
-      <Search fetchData = {this.fetchUserData} />
+      <div>
+        <Search fetchData = {this.fetchUserData} />
+        {(loading && (<p>Loading....</p>))}
+        {error && <p className='text-danger'> {error} </p>}
+      </div>
+
      );
   }
 }
