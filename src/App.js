@@ -3,7 +3,7 @@ import Search from './Components/Search';
 import UserCard from './Components/UserCard';
 import RepoCard from './Components/RepoCard';
 
-const PAGE_SIZE = 2;
+const PAGE_SIZE = 20;
 
 class App extends React.Component {
 
@@ -11,8 +11,9 @@ class App extends React.Component {
     user: null,
     repos: [],
     userDataError: null,
-    reposError: null,
     loading: false,
+    pageSize: '10',
+    page: 1,
   }
 
   fetchUserData = async username => {
@@ -25,22 +26,23 @@ class App extends React.Component {
     return { error }
   }
 
-  fetchRepos = async (username,page) => {
-    const res = await fetch(`https://api.github.com/users/${username}/repos?page=${page}&per_page=${PAGE_SIZE}`);
+  fetchRepos = async username => {
+    const { pageSize, page } = this.state;
+    const res = await fetch(`https://api.github.com/users/${username}/repos?page=${page}&per_page=${pageSize}`);
     if (res.ok) {
       const data = await res.json()
-      return { data};
+      return { data };
     }
     const error = (await res.json()).message;
     return { error }
   }
 
   fetchData = async username => {
-    this.setState({ loading: true}, async () => {
+    this.setState({ loading: true }, async () => {
       try {
         const [user, repos] = await Promise.all([
           this.fetchUserData(username),
-          this.fetchRepos(username, 1)
+          this.fetchRepos(username)
         ])
         if (user.data !== undefined && repos.data !== undefined) {
           return this.setState({
@@ -63,13 +65,29 @@ class App extends React.Component {
     })
   }
 
-  loadPage = async (page) => {
-    const { data} = await this.fetchRepos(this.state.user.login, page)
-    if (data) this.setState(state => ({
-      repos: data,
-      page,
-    }));
+  loadPage = async () => {
+    const { data } = await this.fetchRepos(
+      this.state.user.login,
+      this.state.page,
+    );
+
+    if (data)
+      this.setState(state => ({
+        repos: data,
+      }));
   }
+
+  handlePageChange = page =>{
+    this.setState({page}, () => this.loadPage());
+  }
+
+  handlePageSizeChange = e =>
+    this.setState(
+      {
+        pageSize: e.target.value,
+      },
+      () => this.loadPage(),
+    )
 
   render() {
     const {
@@ -78,7 +96,7 @@ class App extends React.Component {
       loading,
       user,
       repos,
-      page
+      pageSize,
     } = this.state;
 
     const renderRepos = !loading && !reposError && !!repos.length
@@ -88,7 +106,7 @@ class App extends React.Component {
         <Search fetchData={this.fetchData} />
         <div className='container'>
           <div className='text-center pt-5'>
-            {(loading && (<p>Loading....</p>))}
+            {loading && <p>Loading....</p>}
             {userDataError && <p className='text-danger'> {userDataError}</p>}
           </div>
           {!loading && !userDataError && user && <UserCard user={user} />}
@@ -97,19 +115,30 @@ class App extends React.Component {
           {renderRepos && (
             <React.Fragment>
               <div className='mb-4'>
-                {[...new Array(Math.ceil(user.public_repos / PAGE_SIZE))].map((_, index) => (
-                  <button 
-                   key={index} 
-                   className='btn btn-success'
-                   onClick={() => this.loadPage(index + 1)}>
+                {[...new Array(Math.ceil(user.public_repos / pageSize))].map((_, index) => (
+                  <button
+                    key={index}
+                    className="btn btn-success mr-2"
+                    onClick={() => this.handlePageChange(index + 1)}>
                     {index + 1}
                   </button>
                 ),
                 )}
               </div>
 
+              <div className="d-inline-block mb-4">
+                <select
+                  className="form-control"
+                  value={pageSize}
+                  onChange={this.handlePageSizeChange}>
+                  <option value="10">10</option>
+                  <option value="20">20</option>
+                  <option value="30">30</option>
+                </select>
+              </div>
+
               {repos.map(repo => (
-                <RepoCard key={repo.id} repo={repo}/>
+                <RepoCard key={repo.id} repo={repo} />
               ))}
             </React.Fragment>
           )}
